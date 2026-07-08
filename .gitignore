@@ -1,0 +1,38 @@
+# macOS
+.DS_Store
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+yarn.lock
+package-lock.json
+
+# TypeScript
+*.tsbuildinfo
+
+# Android
+android/build/
+android/.gradle/
+android/.cxx/
+android/local.properties
+*.iml
+.idea/
+
+# iOS
+ios/build/
+ios/Pods/
+*.xcuserstate
+*.xccheckout
+DerivedData/
+
+# Testing / coverage
+coverage/
+
+# Editor
+.vscode/
+*.swp
+*.swo
+
+# Nested git (use standalone repo root .git only)
+.git/

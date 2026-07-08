@@ -1,0 +1,68 @@
+buildscript {
+    ext.safeExtGet = { prop, fallback ->
+        rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
+    }
+}
+
+def isNewArchitectureEnabled() {
+    return project.hasProperty("newArchEnabled") && project.newArchEnabled == "true"
+}
+
+apply plugin: "com.android.library"
+apply plugin: "org.jetbrains.kotlin.android"
+
+if (isNewArchitectureEnabled()) {
+    apply plugin: "com.facebook.react"
+}
+
+android {
+    namespace "com.rncustomscanner"
+    compileSdk safeExtGet("compileSdkVersion", 36)
+
+    defaultConfig {
+        minSdkVersion safeExtGet("minSdkVersion", 24)
+        targetSdkVersion safeExtGet("targetSdkVersion", 36)
+        buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    sourceSets {
+        main {
+            java {
+                if (isNewArchitectureEnabled()) {
+                    srcDirs += [
+                        "src/newarch/java",
+                        "${project.buildDir}/generated/source/codegen/java",
+                    ]
+                } else {
+                    srcDirs += ["src/oldarch/java"]
+                }
+            }
+        }
+    }
+}
+
+repositories {
+    google()
+    mavenCentral()
+}
+
+def kotlinVersion = safeExtGet("kotlinVersion", "2.1.20")
+
+dependencies {
+    implementation "com.facebook.react:react-android"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+
+    def cameraxVersion = "1.4.2"
+    implementation "androidx.camera:camera-core:$cameraxVersion"
+    implementation "androidx.camera:camera-camera2:$cameraxVersion"
+    implementation "androidx.camera:camera-lifecycle:$cameraxVersion"
+    implementation "androidx.camera:camera-view:$cameraxVersion"
+    implementation "androidx.appcompat:appcompat:1.7.0"
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.8.7"
+
+    implementation "com.google.mlkit:barcode-scanning:17.3.0"
+}

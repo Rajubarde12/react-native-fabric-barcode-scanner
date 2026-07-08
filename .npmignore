@@ -1,0 +1,16 @@
+# Dev / build artifacts
+**/.gradle
+**/.cxx
+**/build
+**/.idea
+.DS_Store
+*.tsbuildinfo
+.git/
+
+# Dev-only files
+tsconfig.json
+node_modules/
+.gitignore
+
+# App-specific (not part of the library)
+example/

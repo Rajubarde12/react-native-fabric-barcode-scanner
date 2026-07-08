@@ -1,0 +1,71 @@
+{
+  "name": "react-native-fabric-barcode-scanner",
+  "version": "1.0.0",
+  "description": "High-performance native barcode scanner for React Native with TurboModule + Fabric (New Architecture) support on iOS and Android",
+  "main": "src/index.tsx",
+  "types": "src/index.tsx",
+  "source": "src/index.tsx",
+  "react-native": "src/index.tsx",
+  "files": [
+    "src",
+    "ios",
+    "android",
+    "react-native-fabric-barcode-scanner.podspec",
+    "react-native.config.js",
+    "!ios/build",
+    "!android/build",
+    "!android/.cxx",
+    "!android/.gradle"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "react-native",
+    "barcode",
+    "scanner",
+    "qr",
+    "qr-code",
+    "camera",
+    "turbo-module",
+    "fabric",
+    "new-architecture",
+    "mlkit",
+    "camerax"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Rajubarde12/react-native-fabric-barcode-scanner.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Rajubarde12/react-native-fabric-barcode-scanner/issues"
+  },
+  "homepage": "https://github.com/Rajubarde12/react-native-fabric-barcode-scanner#readme",
+  "author": "Rajubarde12 (https://github.com/Rajubarde12)",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "peerDependencies": {
+    "react": "*",
+    "react-native": ">=0.74.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "typescript": "^5.0.0"
+  },
+  "codegenConfig": {
+    "name": "RNCustomScannerSpec",
+    "type": "all",
+    "jsSrcsDir": "src",
+    "ios": {
+      "componentProvider": {
+        "ScannerView": "ScannerView"
+      }
+    },
+    "android": {
+      "javaPackageName": "com.rncustomscanner"
+    }
+  }
+}
