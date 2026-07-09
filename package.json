@@ -1,13 +1,15 @@
 {
   "name": "react-native-fabric-barcode-scanner",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "High-performance native barcode scanner for React Native with TurboModule + Fabric (New Architecture) support on iOS and Android",
-  "main": "src/index.tsx",
-  "types": "src/index.tsx",
-  "source": "src/index.tsx",
+  "main": "lib/commonjs/index.js",
+  "module": "lib/module/index.js",
+  "types": "lib/typescript/src/index.d.ts",
   "react-native": "src/index.tsx",
+  "source": "src/index.tsx",
   "files": [
     "src",
+    "lib",
     "ios",
     "android",
     "react-native-fabric-barcode-scanner.podspec",
@@ -15,10 +17,16 @@
     "!ios/build",
     "!android/build",
     "!android/.cxx",
-    "!android/.gradle"
+    "!android/.gradle",
+    "!**/__tests__",
+    "!**/__fixtures__",
+    "!**/__mocks__"
   ],
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build": "bob build",
+    "prepare": "bob build",
+    "clean": "rm -rf lib"
   },
   "keywords": [
     "react-native",
@@ -47,13 +55,19 @@
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
+  "engines": {
+    "node": ">=18"
+  },
   "peerDependencies": {
-    "react": "*",
+    "react": ">=18.2.0",
     "react-native": ">=0.74.0"
   },
   "devDependencies": {
-    "@types/react": "^19.0.0",
-    "typescript": "^5.0.0"
+    "@types/react": "^18.3.12",
+    "react": "18.3.1",
+    "react-native": "0.76.9",
+    "react-native-builder-bob": "^0.40.13",
+    "typescript": "~5.9.3"
   },
   "codegenConfig": {
     "name": "RNCustomScannerSpec",
@@ -67,5 +81,19 @@
     "android": {
       "javaPackageName": "com.rncustomscanner"
     }
+  },
+  "react-native-builder-bob": {
+    "source": "src",
+    "output": "lib",
+    "targets": [
+      "commonjs",
+      "module",
+      [
+        "typescript",
+        {
+          "project": "tsconfig.build.json"
+        }
+      ]
+    ]
   }
 }

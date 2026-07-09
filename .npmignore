@@ -9,8 +9,12 @@
 
 # Dev-only files
 tsconfig.json
+tsconfig.build.json
 node_modules/
 .gitignore
+doc.md
+
+# Keep published: MIGRATION_PERMISSION_API.md, DEPENDENCY_AUDIT.md, README
 
 # App-specific (not part of the library)
 example/

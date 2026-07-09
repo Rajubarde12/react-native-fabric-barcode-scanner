@@ -8,7 +8,6 @@ import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
-import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
@@ -16,6 +15,7 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.LifecycleOwner
 import com.facebook.react.bridge.LifecycleEventListener
 import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.uimanager.UIManagerHelper
@@ -156,7 +156,9 @@ class ScannerView(context: ThemedReactContext) : FrameLayout(context) {
 
     private fun bindCameraUseCases() {
         val provider = cameraProvider ?: return
-        val activity = reactContext.currentActivity as? AppCompatActivity ?: return
+        // CameraX needs a LifecycleOwner — RN activities implement this via
+        // FragmentActivity / AppCompatActivity; avoid a hard AppCompat dependency.
+        val lifecycleOwner = reactContext.currentActivity as? LifecycleOwner ?: return
 
         provider.unbindAll()
 
@@ -185,7 +187,7 @@ class ScannerView(context: ThemedReactContext) : FrameLayout(context) {
         try {
             val useCases = listOfNotNull(preview, imageAnalysis)
             camera = provider.bindToLifecycle(
-                activity,
+                lifecycleOwner,
                 CameraSelector.DEFAULT_BACK_CAMERA,
                 *useCases.toTypedArray(),
             )

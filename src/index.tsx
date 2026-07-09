@@ -1,65 +1,34 @@
 import ScannerModule from './NativeScannerModule';
-import type { CameraPermissionStatus } from './NativeScannerModule';
 import ScannerViewNative from './ScannerViewNativeComponent';
 import type { BarcodeScannedEvent } from './ScannerViewNativeComponent';
 
 export const ScannerView = ScannerViewNative;
-export type { BarcodeScannedEvent, CameraPermissionStatus };
+export type { BarcodeScannedEvent };
 
-export interface CameraPermissionState {
-  status: CameraPermissionStatus;
-  canRequest: boolean;
-  canOpenSettings: boolean;
-}
+export {
+  getCameraPermissionState,
+  requestCameraPermission,
+  openCameraSettings,
+  type CameraPermissionState,
+  type CameraPermissionStatus,
+} from './cameraPermission';
 
-export function isCameraPermissionGranted(
-  status: CameraPermissionStatus,
-): boolean {
-  return status === 'granted';
-}
+/** @deprecated Use {@link getCameraPermissionState} and read `.status`, or {@link useCameraPermission}. */
+export { checkCameraPermission } from './cameraPermission';
 
-export function canRequestCameraPermission(
-  status: CameraPermissionStatus,
-): boolean {
-  return status === 'not-determined' || status === 'denied';
-}
+/** @deprecated Use `state.status === 'granted'` or `useCameraPermission().isGranted`. */
+export { isCameraPermissionGranted } from './cameraPermission';
 
-export function shouldOpenCameraSettings(
-  status: CameraPermissionStatus,
-): boolean {
-  return status === 'blocked' || status === 'restricted';
-}
+/** @deprecated Use `getCameraPermissionState().canRequest` or `useCameraPermission().canRequest`. */
+export { canRequestCameraPermission } from './cameraPermission';
 
-export async function getCameraPermissionState(): Promise<CameraPermissionState> {
-  const status = await ScannerModule.checkCameraPermission();
-  return {
-    status,
-    canRequest: canRequestCameraPermission(status),
-    canOpenSettings: shouldOpenCameraSettings(status),
-  };
-}
+/** @deprecated Use `getCameraPermissionState().canOpenSettings` or `useCameraPermission().canOpenSettings`. */
+export { shouldOpenCameraSettings } from './cameraPermission';
 
-export async function checkCameraPermission(): Promise<CameraPermissionStatus> {
-  return ScannerModule.checkCameraPermission();
-}
-
-export async function requestCameraPermission(): Promise<CameraPermissionStatus> {
-  const current = await ScannerModule.checkCameraPermission();
-
-  if (current === 'granted') {
-    return 'granted';
-  }
-
-  if (!canRequestCameraPermission(current)) {
-    return current;
-  }
-
-  return ScannerModule.requestCameraPermission();
-}
-
-export function openCameraSettings(): void {
-  ScannerModule.openCameraSettings();
-}
+export {
+  useCameraPermission,
+  type UseCameraPermissionResult,
+} from './useCameraPermission';
 
 export function setTorchEnabled(enabled: boolean): void {
   ScannerModule.setTorchEnabled(enabled);

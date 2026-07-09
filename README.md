@@ -8,17 +8,34 @@ Native barcode scanner for React Native built with **TurboModules** and **Fabric
 ## Features
 
 - Fabric `ScannerView` component with continuous barcode scanning
+- **`useCameraPermission()`** hook — recommended permission UX (auto-refresh on foreground)
 - TurboModule `ScannerModule` for camera permission and torch control
 - New Architecture support on iOS and Android
 - Configurable barcode formats (`qr`, `ean13`, `code128`, and more)
-- No permission dialogs from the view — permission is handled in JS via the module
+- No permission dialogs from the view — permission is handled in JS via the module / hook
 
 ## Requirements
 
-- React Native **0.74+**
-- New Architecture enabled (`newArchEnabled=true` recommended)
-- iOS 13.4+
-- Android API 24+
+| Platform | Minimum |
+|----------|---------|
+| React Native | **0.74.0+** (New Architecture recommended; default on RN 0.76+) |
+| React | **18.2+** (peer) |
+| Node | **18+** (library build / tooling) |
+| iOS | **13.4+** library fallback; host RN sets floor (**15.1** on RN 0.76+) via `min_ios_version_supported` |
+| Xcode | **≥ 15.1** (RN 0.74–0.80); **≥ 16.1** (RN 0.81+ / 0.86 helpers) |
+| Android | **API 24+** (Android 7.0) |
+| Kotlin (host app) | Align with RN template (library default fallback **2.1.20**) |
+| Swift | **5.0** language mode |
+| CameraX (Android) | **1.6.1** (bundled by library) |
+| ML Kit barcode (Android) | **17.3.0** bundled model (see `DEPENDENCY_AUDIT.md` for unbundled option) |
+
+Enable New Architecture in `android/gradle.properties`:
+
+```properties
+newArchEnabled=true
+```
+
+> Full dependency audit, upgrade table, and migration notes: see [`DEPENDENCY_AUDIT.md`](./DEPENDENCY_AUDIT.md) (also mirrored in internal `doc.md`).
 
 ## Installation
 
@@ -49,39 +66,40 @@ Camera permission is declared by the library. Ensure your app manifest includes 
 <uses-permission android:name="android.permission.CAMERA" />
 ```
 
-Enable New Architecture in `android/gradle.properties`:
-
-```properties
-newArchEnabled=true
-```
+Also set `newArchEnabled=true` in the app's `android/gradle.properties` (see Requirements above).
 
 ## Usage
 
+### Which permission API should I use?
+
+| I need… | Use |
+|---------|-----|
+| Permission UI in a React screen | **`useCameraPermission()`** (recommended) |
+| One-shot check outside React | `getCameraPermissionState()` |
+| Anything else | See [MIGRATION_PERMISSION_API.md](./MIGRATION_PERMISSION_API.md) |
+
 ```tsx
-import { useEffect, useState } from 'react';
 import { Button, Text, View } from 'react-native';
 import {
   ScannerView,
-  getCameraPermissionState,
-  requestCameraPermission,
-  openCameraSettings,
-  type CameraPermissionStatus,
+  useCameraPermission,
 } from 'react-native-fabric-barcode-scanner';
 
 function ScannerScreen() {
-  const [status, setStatus] = useState<CameraPermissionStatus>('not-determined');
+  const {
+    isGranted,
+    canRequest,
+    canOpenSettings,
+    isLoading,
+    request,
+    openSettings,
+  } = useCameraPermission();
 
-  const refreshPermission = async () => {
-    const state = await getCameraPermissionState();
-    setStatus(state.status);
-    return state;
-  };
+  if (isLoading) {
+    return null;
+  }
 
-  useEffect(() => {
-    refreshPermission();
-  }, []);
-
-  if (status === 'granted') {
+  if (isGranted) {
     return (
       <ScannerView
         style={{ flex: 1 }}
@@ -97,28 +115,24 @@ function ScannerScreen() {
 
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
-      {status === 'not-determined' || status === 'denied' ? (
-        <Button
-          title="Allow camera"
-          onPress={async () => {
-            const next = await requestCameraPermission();
-            setStatus(next);
-          }}
-        />
+      {canRequest ? (
+        <Button title="Allow camera" onPress={() => { void request(); }} />
       ) : null}
 
-      {status === 'blocked' || status === 'restricted' ? (
+      {canOpenSettings ? (
         <>
           <Text style={{ marginBottom: 12, textAlign: 'center' }}>
-            Camera access is {status}. Open settings to enable it.
+            Camera access is blocked. Open settings to enable it.
           </Text>
-          <Button title="Open settings" onPress={openCameraSettings} />
+          <Button title="Open settings" onPress={openSettings} />
         </>
       ) : null}
     </View>
   );
 }
 ```
+
+The hook refreshes automatically when the app returns to the foreground (e.g. after Settings).
 
 ## API
 
@@ -131,52 +145,52 @@ function ScannerScreen() {
 | `scanFormats` | `string[]` | all supported | Barcode formats to decode |
 | `onBarcodeScanned` | `(event) => void` | — | Fired continuously while a code is visible |
 
-### Camera permission (same API on iOS & Android)
+### Camera permission — recommended: `useCameraPermission()`
 
-Use **one flow** for both platforms:
+| Field / method | Type | Description |
+|----------------|------|-------------|
+| `status` | `CameraPermissionStatus` | `granted` \| `not-determined` \| `denied` \| `blocked` \| `restricted` |
+| `isGranted` | `boolean` | `status === 'granted'` |
+| `canRequest` | `boolean` | Show “Allow camera” |
+| `canOpenSettings` | `boolean` | Show “Open settings” |
+| `isLoading` | `boolean` | True until first native check finishes |
+| `request()` | `() => Promise<status>` | System permission dialog (when allowed) |
+| `openSettings()` | `() => void` | Opens OS app settings |
+| `refresh()` | `() => Promise<state>` | Manual re-check |
 
-```tsx
-if (status === 'not-determined' || status === 'denied') {
-  // Show "Allow camera" → requestCameraPermission()
-} else if (status === 'blocked' || status === 'restricted') {
-  // Show "Open settings" → openCameraSettings()
-} else {
-  // granted → show ScannerView
-}
-```
-
-| Status | Meaning | Developer action |
-|--------|---------|------------------|
+| Status | Meaning | UI |
+|--------|---------|-----|
 | `granted` | Camera allowed | Show `ScannerView` |
-| `not-determined` | Never asked yet | `requestCameraPermission()` |
-| `denied` | Denied, system dialog can still appear | `requestCameraPermission()` |
-| `blocked` | System will not ask again | `openCameraSettings()` |
-| `restricted` | Restricted by device policy (iOS) | `openCameraSettings()` |
+| `not-determined` / `denied` | Can still prompt | `request()` |
+| `blocked` / `restricted` | Must use Settings | `openSettings()` |
 
-**How each platform maps to the same status:**
+**Platform mapping (same JS on iOS & Android):**
 
-| Scenario | iOS returns | Android returns |
-|----------|-------------|-----------------|
+| Scenario | iOS | Android |
+|----------|-----|---------|
 | Never asked | `not-determined` | `not-determined` |
-| User allowed | `granted` | `granted` |
-| Denied, can ask again | — (iOS does not re-prompt) | `denied` |
-| Denied permanently | `blocked` (after 1 deny) | `blocked` (after 2+ denies or "Don't ask again") |
-| Device restricted | `restricted` | — |
+| Allowed | `granted` | `granted` |
+| Denied, can ask again | — | `denied` |
+| Permanently denied | `blocked` | `blocked` |
+| Device policy | `restricted` | — |
 
-iOS blocks after **one** deny. Android allows **2–3** prompts, then returns `blocked` — but your JS code stays the same on both platforms.
+### Advanced / low-level permission API
 
-### `ScannerModule` methods
+Prefer the hook above. These remain for non-React or legacy code:
 
-| Method | Returns | Description |
-|--------|---------|-------------|
-| `getCameraPermissionState()` | `Promise<{ status, canRequest, canOpenSettings }>` | Full permission state for UI |
-| `checkCameraPermission()` | `Promise<CameraPermissionStatus>` | Current camera permission status |
-| `requestCameraPermission()` | `Promise<CameraPermissionStatus>` | Request permission (only when allowed) |
-| `openCameraSettings()` | `void` | Open app settings so user can enable camera |
-| `canRequestCameraPermission(status)` | `boolean` | `true` for `not-determined` or `denied` |
-| `shouldOpenCameraSettings(status)` | `boolean` | `true` for `blocked` or `restricted` |
-| `isCameraPermissionGranted(status)` | `boolean` | `true` when `granted` |
-| `setTorchEnabled(enabled)` | `void` | Toggle torch outside the view |
+| Method | Use when |
+|--------|----------|
+| `getCameraPermissionState()` | Imperative full state `{ status, canRequest, canOpenSettings }` |
+| `requestCameraPermission()` | Imperative request (hook exposes `request()`) |
+| `openCameraSettings()` | Imperative settings (hook exposes `openSettings()`) |
+
+**Deprecated** (still exported; `__DEV__` warns once): `checkCameraPermission`, `isCameraPermissionGranted`, `canRequestCameraPermission`, `shouldOpenCameraSettings` — see [MIGRATION_PERMISSION_API.md](./MIGRATION_PERMISSION_API.md).
+
+### Other
+
+| Method | Description |
+|--------|-------------|
+| `setTorchEnabled(enabled)` | Toggle torch outside the view (prefer `ScannerView` `torchOn` when mounted) |
 
 ### Supported formats
 
@@ -190,7 +204,11 @@ This library is built for React Native's New Architecture:
 - **Fabric component**: `ScannerView`
 - Codegen spec: `RNCustomScannerSpec`
 
-Legacy architecture is supported via paper fallbacks on Android.
+Legacy architecture is supported via paper fallbacks on Android (`android/src/oldarch`). Those sources share the same CameraX / ML Kit dependencies — no separate Old-Arch-only Maven artifacts.
+
+## Dependency policy
+
+See **[DEPENDENCY_AUDIT.md](./DEPENDENCY_AUDIT.md)** for the full upgrade table, ML Kit bundled vs unbundled tradeoffs, and migration notes. Dependabot is configured in `.github/dependabot.yml`.
 
 ## License
 

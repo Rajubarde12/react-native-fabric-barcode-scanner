@@ -1,0 +1,32 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 10
+    groups:
+      js-dev:
+        patterns:
+          - "typescript"
+          - "@types/*"
+          - "react-native-builder-bob"
+    ignore:
+      # Peer-provided; only bump when raising library peer range
+      - dependency-name: react
+      - dependency-name: react-native
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+
+  # Gradle deps live in android/build.gradle (not a version catalog yet).
+  # Dependabot Gradle support still picks up many Maven coordinates.
+  - package-ecosystem: gradle
+    directory: "/android"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5

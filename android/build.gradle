@@ -15,6 +15,16 @@ if (isNewArchitectureEnabled()) {
     apply plugin: "com.facebook.react"
 }
 
+// ---------------------------------------------------------------------------
+// Dependency versions (bump here; see DEPENDENCY_AUDIT.md)
+// CameraX 1.6.1 — latest stable (Jul 2026). minSdk floor for CameraX defaults
+// is API 23; this library keeps API 24 to match RN 0.76+.
+// ML Kit barcode-scanning 17.3.0 — latest *bundled* model (offline, larger APK).
+// Unbundled alternative: play-services-mlkit-barcode-scanning:18.3.1
+// ---------------------------------------------------------------------------
+def cameraxVersion = "1.6.1"
+def mlkitBarcodeVersion = "17.3.0"
+
 android {
     namespace "com.rncustomscanner"
     compileSdk safeExtGet("compileSdkVersion", 36)
@@ -56,13 +66,13 @@ dependencies {
     implementation "com.facebook.react:react-android"
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
 
-    def cameraxVersion = "1.4.2"
     implementation "androidx.camera:camera-core:$cameraxVersion"
     implementation "androidx.camera:camera-camera2:$cameraxVersion"
     implementation "androidx.camera:camera-lifecycle:$cameraxVersion"
     implementation "androidx.camera:camera-view:$cameraxVersion"
-    implementation "androidx.appcompat:appcompat:1.7.0"
-    implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.8.7"
 
-    implementation "com.google.mlkit:barcode-scanning:17.3.0"
+    // Bundled ML Kit model — works offline; ~2–3MB native libs in APK.
+    // For smaller APK + Play Services download, swap to:
+    //   implementation "com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.1"
+    implementation "com.google.mlkit:barcode-scanning:$mlkitBarcodeVersion"
 }

@@ -10,6 +10,7 @@ package-lock.json
 
 # TypeScript
 *.tsbuildinfo
+lib/
 
 # Android
 android/build/
@@ -36,3 +37,6 @@ coverage/
 
 # Nested git (use standalone repo root .git only)
 .git/
+
+# Internal docs (local only — not committed)
+doc.md
