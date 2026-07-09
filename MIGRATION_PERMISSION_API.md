@@ -1,26 +1,11 @@
-# Permission API — migration guide
+# Permission API
 
-**Change type:** Additive (Option B) — non-breaking.  
-**Recommended entry point:** `useCameraPermission()`  
-**Version:** ship with library **1.1.0** (or next minor).
+**Recommended:** `useCameraPermission()`  
+**Imperative:** `getCameraPermissionState()` / `requestCameraPermission()` / `openCameraSettings()`
 
----
+The hook is a thin React wrapper: it reads native status, normalizes it into UI flags, and refreshes on AppState → active. It does **not** auto-show the system dialog — call `request()` from your UI.
 
-## Before → after (exports)
-
-| Export | Before | After |
-|--------|--------|-------|
-| `useCameraPermission` | — | **New — recommended** |
-| `getCameraPermissionState` | Public | Public (imperative / non-React) |
-| `requestCameraPermission` | Public | Public (prefer hook `request()`) |
-| `openCameraSettings` | Public | Public (prefer hook `openSettings()`) |
-| `checkCameraPermission` | Public | **@deprecated** → use `.status` from state/hook |
-| `isCameraPermissionGranted` | Public | **@deprecated** → `status === 'granted'` / `isGranted` |
-| `canRequestCameraPermission` | Public | **@deprecated** → `canRequest` field |
-| `shouldOpenCameraSettings` | Public | **@deprecated** → `canOpenSettings` field |
-| `ScannerView` / `setTorchEnabled` | Unchanged | Unchanged |
-
-Deprecated helpers still work; in `__DEV__` they log a one-time `console.warn` per symbol.
+Legacy helpers (`checkCameraPermission`, `isCameraPermissionGranted`, `canRequestCameraPermission`, `shouldOpenCameraSettings`) were **removed**.
 
 ---
 
@@ -28,17 +13,13 @@ Deprecated helpers still work; in `__DEV__` they log a one-time `console.warn` p
 
 | I need… | Use |
 |---------|-----|
-| Permission UI in a React screen | **`useCameraPermission()`** |
+| Permission in a React screen | **`useCameraPermission()`** |
 | One-shot check outside React | **`getCameraPermissionState()`** |
 | Open OS settings without the hook | `openCameraSettings()` |
-| Raw status string only | `getCameraPermissionState()` then `.status` (not `checkCameraPermission`) |
-| Boolean helpers | Prefer fields on the state object / hook — not the deprecated top-level functions |
 
 ---
 
-## Migrate existing code
-
-### From boolean helpers
+## Migrate from removed helpers
 
 ```diff
 - import {
@@ -60,13 +41,9 @@ Deprecated helpers still work; in `__DEV__` they log a one-time `console.warn` p
 + const { isGranted, canRequest, canOpenSettings, request, openSettings } =
 +   useCameraPermission();
 + if (isGranted) return <ScannerView ... />;
-+ if (canRequest) return <Button onPress={request} ... />;
-+ if (canOpenSettings) return <Button onPress={openSettings} ... />;
++ if (canRequest) return <Button onPress={request} ... />; // your UI
++ if (canOpenSettings) return <Button onPress={openSettings} ... />; // your UI
 ```
-
-### From `getCameraPermissionState` + `useEffect` (still valid)
-
-No change required. Optionally switch to the hook to get AppState refresh for free (Settings → back).
 
 ### Imperative / non-React
 
@@ -92,3 +69,18 @@ const { status, canRequest, canOpenSettings } = await getCameraPermissionState()
 ```
 
 Auto-refreshes when `AppState` becomes `'active'` (covers return-from-Settings).
+
+---
+
+## Platform status mapping
+
+| Scenario | iOS | Android |
+|----------|-----|---------|
+| Never asked | `not-determined` | `not-determined` |
+| Allowed | `granted` | `granted` |
+| Soft deny (can ask again) | — | `denied` |
+| Permanent deny / Don't ask again | `blocked` | `blocked` |
+| Device / parental policy | `restricted` | — |
+
+On iOS, the first user deny is permanent for the system dialog → `blocked` (`canOpenSettings`).  
+On Android, soft deny is `denied` (`canRequest`); "Don't ask again" is `blocked`.

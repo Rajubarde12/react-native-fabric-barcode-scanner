@@ -31,6 +31,9 @@ Pod::Spec.new do |s|
   s.static_framework = true
 
   s.source_files = "ios/**/*.{h,m,mm,swift}"
+  s.resource_bundles = {
+    "RNCustomScannerPrivacyInfo" => ["ios/PrivacyInfo.xcprivacy"]
+  }
   s.frameworks   = "AVFoundation", "UIKit"
 
   s.pod_target_xcconfig = {

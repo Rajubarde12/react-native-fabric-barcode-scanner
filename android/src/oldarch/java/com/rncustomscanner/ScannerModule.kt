@@ -1,17 +1,11 @@
 package com.rncustomscanner
 
-import android.Manifest
-import android.content.pm.PackageManager
 import android.hardware.camera2.CameraManager
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.module.annotations.ReactModule
-import com.facebook.react.modules.core.PermissionAwareActivity
-import com.facebook.react.modules.core.PermissionListener
 
 @ReactModule(name = ScannerModule.NAME)
 class ScannerModule(
@@ -31,58 +25,7 @@ class ScannerModule(
 
     @ReactMethod
     fun requestCameraPermission(promise: Promise) {
-        val current = CameraPermissionHelper.checkPermission(reactContext)
-
-        if (current == CameraPermissionHelper.STATUS_GRANTED) {
-            promise.resolve(current)
-            return
-        }
-
-        if (!CameraPermissionHelper.canRequestPermission(current)) {
-            promise.resolve(current)
-            return
-        }
-
-        val activity = reactContext.currentActivity
-        if (activity == null) {
-            promise.resolve(CameraPermissionHelper.STATUS_DENIED)
-            return
-        }
-
-        if (
-            ContextCompat.checkSelfPermission(activity, Manifest.permission.CAMERA) ==
-            PackageManager.PERMISSION_GRANTED
-        ) {
-            promise.resolve(CameraPermissionHelper.STATUS_GRANTED)
-            return
-        }
-
-        val listener = PermissionListener { requestCode, _, grantResults ->
-            if (requestCode != CAMERA_PERMISSION_REQUEST_CODE) {
-                return@PermissionListener false
-            }
-            promise.resolve(
-                CameraPermissionHelper.resolveRequestResult(reactContext, grantResults),
-            )
-            true
-        }
-
-        CameraPermissionHelper.markPermissionRequested(reactContext)
-
-        if (activity is PermissionAwareActivity) {
-            activity.requestPermissions(
-                arrayOf(Manifest.permission.CAMERA),
-                CAMERA_PERMISSION_REQUEST_CODE,
-                listener,
-            )
-        } else {
-            ActivityCompat.requestPermissions(
-                activity,
-                arrayOf(Manifest.permission.CAMERA),
-                CAMERA_PERMISSION_REQUEST_CODE,
-            )
-            promise.resolve(CameraPermissionHelper.checkPermission(reactContext))
-        }
+        CameraPermissionRequester.request(reactContext, promise)
     }
 
     @ReactMethod
@@ -104,6 +47,5 @@ class ScannerModule(
 
     companion object {
         const val NAME = "ScannerModule"
-        const val CAMERA_PERMISSION_REQUEST_CODE = 0x5343414E
     }
 }

@@ -8,11 +8,11 @@ Native barcode scanner for React Native built with **TurboModules** and **Fabric
 ## Features
 
 - Fabric `ScannerView` component with continuous barcode scanning
-- **`useCameraPermission()`** hook — recommended permission UX (auto-refresh on foreground)
+- **`useCameraPermission()`** — normalizes native camera status for UI (you own the UI)
 - TurboModule `ScannerModule` for camera permission and torch control
 - New Architecture support on iOS and Android
 - Configurable barcode formats (`qr`, `ean13`, `code128`, and more)
-- No permission dialogs from the view — permission is handled in JS via the module / hook
+- Android waits for `currentActivity` before requesting permission
 
 ## Requirements
 
@@ -70,13 +70,8 @@ Also set `newArchEnabled=true` in the app's `android/gradle.properties` (see Req
 
 ## Usage
 
-### Which permission API should I use?
-
-| I need… | Use |
-|---------|-----|
-| Permission UI in a React screen | **`useCameraPermission()`** (recommended) |
-| One-shot check outside React | `getCameraPermissionState()` |
-| Anything else | See [MIGRATION_PERMISSION_API.md](./MIGRATION_PERMISSION_API.md) |
+The library normalizes **permission status** (check, request, settings).  
+You build the **UI** and decide when to call `request()`.
 
 ```tsx
 import { Button, Text, View } from 'react-native';
@@ -96,7 +91,7 @@ function ScannerScreen() {
   } = useCameraPermission();
 
   if (isLoading) {
-    return null;
+    return null; // or your spinner
   }
 
   if (isGranted) {
@@ -104,7 +99,6 @@ function ScannerScreen() {
       <ScannerView
         style={{ flex: 1 }}
         isActive
-        torchOn={false}
         scanFormats={['qr', 'ean13', 'code128']}
         onBarcodeScanned={(event) => {
           console.log(event.nativeEvent.value, event.nativeEvent.type);
@@ -113,22 +107,21 @@ function ScannerScreen() {
     );
   }
 
-  return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
-      {canRequest ? (
-        <Button title="Allow camera" onPress={() => { void request(); }} />
-      ) : null}
+  // Your UI — library does not ship permission screens
+  if (canRequest) {
+    return <Button title="Allow camera" onPress={() => { void request(); }} />;
+  }
 
-      {canOpenSettings ? (
-        <>
-          <Text style={{ marginBottom: 12, textAlign: 'center' }}>
-            Camera access is blocked. Open settings to enable it.
-          </Text>
-          <Button title="Open settings" onPress={openSettings} />
-        </>
-      ) : null}
-    </View>
-  );
+  if (canOpenSettings) {
+    return (
+      <View>
+        <Text>Camera access is blocked. Enable it from settings.</Text>
+        <Button title="Open settings" onPress={openSettings} />
+      </View>
+    );
+  }
+
+  return null;
 }
 ```
 
@@ -145,24 +138,25 @@ The hook refreshes automatically when the app returns to the foreground (e.g. af
 | `scanFormats` | `string[]` | all supported | Barcode formats to decode |
 | `onBarcodeScanned` | `(event) => void` | — | Fired continuously while a code is visible |
 
-### Camera permission — recommended: `useCameraPermission()`
+### `useCameraPermission()`
 
 | Field / method | Type | Description |
 |----------------|------|-------------|
 | `status` | `CameraPermissionStatus` | `granted` \| `not-determined` \| `denied` \| `blocked` \| `restricted` |
 | `isGranted` | `boolean` | `status === 'granted'` |
-| `canRequest` | `boolean` | Show “Allow camera” |
-| `canOpenSettings` | `boolean` | Show “Open settings” |
-| `isLoading` | `boolean` | True until first native check finishes |
+| `canRequest` | `boolean` | User can still be prompted — show your Allow UI |
+| `canOpenSettings` | `boolean` | Must use Settings — show your Open settings UI |
+| `isLoading` | `boolean` | True until first check finishes |
 | `request()` | `() => Promise<status>` | System permission dialog (when allowed) |
 | `openSettings()` | `() => void` | Opens OS app settings |
 | `refresh()` | `() => Promise<state>` | Manual re-check |
 
-| Status | Meaning | UI |
-|--------|---------|-----|
-| `granted` | Camera allowed | Show `ScannerView` |
-| `not-determined` / `denied` | Can still prompt | `request()` |
-| `blocked` / `restricted` | Must use Settings | `openSettings()` |
+| Status | Meaning | What you render |
+|--------|---------|-----------------|
+| `granted` | Camera allowed | `<ScannerView />` |
+| `not-determined` | Never asked | Your Allow button → `request()` |
+| `denied` | Soft deny, can ask again | Your Allow button → `request()` |
+| `blocked` / `restricted` | Must use Settings | Your Settings button → `openSettings()` |
 
 **Platform mapping (same JS on iOS & Android):**
 
@@ -176,7 +170,7 @@ The hook refreshes automatically when the app returns to the foreground (e.g. af
 
 ### Advanced / low-level permission API
 
-Prefer the hook above. These remain for non-React or legacy code:
+Prefer the hook. These remain for non-React or legacy code:
 
 | Method | Use when |
 |--------|----------|
@@ -184,7 +178,7 @@ Prefer the hook above. These remain for non-React or legacy code:
 | `requestCameraPermission()` | Imperative request (hook exposes `request()`) |
 | `openCameraSettings()` | Imperative settings (hook exposes `openSettings()`) |
 
-**Deprecated** (still exported; `__DEV__` warns once): `checkCameraPermission`, `isCameraPermissionGranted`, `canRequestCameraPermission`, `shouldOpenCameraSettings` — see [MIGRATION_PERMISSION_API.md](./MIGRATION_PERMISSION_API.md).
+See [MIGRATION_PERMISSION_API.md](./MIGRATION_PERMISSION_API.md) if you previously used the removed boolean helpers.
 
 ### Other
 

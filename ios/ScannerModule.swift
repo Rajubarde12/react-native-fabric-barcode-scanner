@@ -54,6 +54,9 @@ public class RNScannerHelper: NSObject {
     super.init()
   }
 
+  /// Maps AVAuthorizationStatus to the shared JS status model.
+  /// iOS has no soft-deny: after the user denies once, only Settings can re-enable
+  /// camera — so `.denied` is reported as `blocked` (canOpenSettings / not canRequest).
   @objc public func checkCameraPermission() -> String {
     switch AVCaptureDevice.authorizationStatus(for: .video) {
     case .authorized: return "granted"
@@ -71,12 +74,14 @@ public class RNScannerHelper: NSObject {
     case .authorized:
       completion("granted")
     case .denied:
+      // Cannot show the system dialog again — Settings only.
       completion("blocked")
     case .restricted:
       completion("restricted")
     case .notDetermined:
       AVCaptureDevice.requestAccess(for: .video) { granted in
         DispatchQueue.main.async {
+          // First deny on iOS is permanent for the dialog → blocked.
           completion(granted ? "granted" : "blocked")
         }
       }

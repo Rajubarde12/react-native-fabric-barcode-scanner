@@ -32,6 +32,7 @@ public class RNScannerView: UIView {
   @objc public var isActive: Bool = true {
     didSet {
       sessionQueue.async {
+        // Re-try session setup when permission may have been granted after mount.
         if !self.isSessionConfigured {
           self.configureSessionIfNeeded()
         } else {
@@ -121,6 +122,25 @@ public class RNScannerView: UIView {
   public override func layoutSubviews() {
     super.layoutSubviews()
     previewLayer?.frame = bounds
+    // If the view stayed mounted while JS obtained permission, start the session.
+    if !isSessionConfigured && isActive {
+      sessionQueue.async { [weak self] in
+        self?.configureSessionIfNeeded()
+      }
+    }
+  }
+
+  public override func didMoveToWindow() {
+    super.didMoveToWindow()
+    guard window != nil, isActive else { return }
+    sessionQueue.async { [weak self] in
+      guard let self = self else { return }
+      if !self.isSessionConfigured {
+        self.configureSessionIfNeeded()
+      } else {
+        self.updateSessionState()
+      }
+    }
   }
 
   public override func removeFromSuperview() {

@@ -23,17 +23,15 @@ export interface UseCameraPermissionResult extends CameraPermissionState {
 }
 
 /**
- * Recommended permission API for React screens.
- *
- * Wraps `getCameraPermissionState` / `requestCameraPermission` /
- * `openCameraSettings`, refreshes when the app returns to the foreground
- * (e.g. after Settings), and exposes UI-ready flags.
+ * Thin React wrapper around native camera permission.
+ * Normalizes OS status into `{ status, canRequest, canOpenSettings }`.
  *
  * @example
  * ```tsx
- * const { isGranted, canRequest, canOpenSettings, request, openSettings } =
+ * const { isGranted, canRequest, canOpenSettings, request, openSettings, isLoading } =
  *   useCameraPermission();
  *
+ * if (isLoading) return null;
  * if (isGranted) return <ScannerView ... />;
  * if (canRequest) return <Button title="Allow camera" onPress={request} />;
  * if (canOpenSettings) return <Button title="Open settings" onPress={openSettings} />;
@@ -54,6 +52,18 @@ export function useCameraPermission(): UseCameraPermissionResult {
     return next;
   }, []);
 
+  const request = useCallback(async () => {
+    const status = await requestCameraPermission();
+    const next = await getCameraPermissionState();
+    setState(next);
+    setIsLoading(false);
+    return status;
+  }, []);
+
+  const openSettings = useCallback(() => {
+    openCameraSettings();
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -65,11 +75,11 @@ export function useCameraPermission(): UseCameraPermissionResult {
       }
     };
 
-    run();
+    void run();
 
     const onChange = (nextAppState: AppStateStatus) => {
       if (nextAppState === 'active') {
-        run();
+        void run();
       }
     };
 
@@ -78,17 +88,6 @@ export function useCameraPermission(): UseCameraPermissionResult {
       cancelled = true;
       subscription.remove();
     };
-  }, []);
-
-  const request = useCallback(async () => {
-    const status = await requestCameraPermission();
-    const next = await getCameraPermissionState();
-    setState(next);
-    return status;
-  }, []);
-
-  const openSettings = useCallback(() => {
-    openCameraSettings();
   }, []);
 
   return {

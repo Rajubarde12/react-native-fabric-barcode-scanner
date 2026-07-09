@@ -20,7 +20,6 @@ object CameraPermissionHelper {
 
     private const val PREFS_NAME = "rncustomscanner_permissions"
     private const val KEY_CAMERA_REQUESTED = "camera_requested"
-    private const val KEY_CAMERA_DENY_COUNT = "camera_deny_count"
 
     fun checkPermission(context: ReactApplicationContext): String {
         if (isGranted(context)) {
@@ -31,16 +30,13 @@ object CameraPermissionHelper {
             return STATUS_NOT_DETERMINED
         }
 
-        if (shouldShowRationale(context)) {
-            return STATUS_DENIED
-        }
-
-        // Unified with iOS: only blocked when the system will not show the dialog again.
-        // Android may deny 1-2 times before reaching this state.
-        return if (getDenyCount(context) >= 2) {
-            STATUS_BLOCKED
-        } else {
+        // After a real system dialog:
+        // - rationale true  → soft deny, dialog can show again
+        // - rationale false → "Don't ask again" / permanent deny → Settings only
+        return if (shouldShowRationale(context)) {
             STATUS_DENIED
+        } else {
+            STATUS_BLOCKED
         }
     }
 
@@ -54,12 +50,14 @@ object CameraPermissionHelper {
             grantResults[0] == PackageManager.PERMISSION_GRANTED
 
         if (granted) {
-            clearDenyCount(context)
             return STATUS_GRANTED
         }
 
-        incrementDenyCount(context)
-        return resolveDeniedStatus(context)
+        return if (shouldShowRationale(context)) {
+            STATUS_DENIED
+        } else {
+            STATUS_BLOCKED
+        }
     }
 
     fun canRequestPermission(status: String): Boolean {
@@ -83,20 +81,6 @@ object CameraPermissionHelper {
         context.startActivity(intent)
     }
 
-    private fun resolveDeniedStatus(context: ReactApplicationContext): String {
-        if (shouldShowRationale(context)) {
-            return STATUS_DENIED
-        }
-
-        // First denial: always "denied" (Android can still show the dialog again).
-        // Second+ denial without rationale: "blocked" (same as iOS after one deny).
-        return if (getDenyCount(context) >= 2) {
-            STATUS_BLOCKED
-        } else {
-            STATUS_DENIED
-        }
-    }
-
     private fun isGranted(context: ReactApplicationContext): Boolean {
         val activity = context.currentActivity
         val checkContext = activity ?: context
@@ -114,25 +98,6 @@ object CameraPermissionHelper {
 
     private fun wasPermissionRequested(context: ReactApplicationContext): Boolean {
         return getPrefs(context).getBoolean(KEY_CAMERA_REQUESTED, false)
-    }
-
-    private fun getDenyCount(context: ReactApplicationContext): Int {
-        return getPrefs(context).getInt(KEY_CAMERA_DENY_COUNT, 0)
-    }
-
-    private fun incrementDenyCount(context: ReactApplicationContext) {
-        val count = getDenyCount(context)
-        getPrefs(context)
-            .edit()
-            .putInt(KEY_CAMERA_DENY_COUNT, count + 1)
-            .apply()
-    }
-
-    private fun clearDenyCount(context: ReactApplicationContext) {
-        getPrefs(context)
-            .edit()
-            .putInt(KEY_CAMERA_DENY_COUNT, 0)
-            .apply()
     }
 
     private fun getPrefs(context: ReactApplicationContext) =

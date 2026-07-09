@@ -9,20 +9,12 @@ export interface CameraPermissionState {
   canOpenSettings: boolean;
 }
 
-const deprecatedWarned = new Set<string>();
-
-function warnDeprecatedOnce(name: string, replacement: string): void {
-  if (typeof __DEV__ !== 'undefined' && !__DEV__) {
-    return;
-  }
-  if (deprecatedWarned.has(name)) {
-    return;
-  }
-  deprecatedWarned.add(name);
-  // eslint-disable-next-line no-console
-  console.warn(
-    `[react-native-fabric-barcode-scanner] ${name} is deprecated. ${replacement}`,
-  );
+function toPermissionState(status: CameraPermissionStatus): CameraPermissionState {
+  return {
+    status,
+    canRequest: status === 'not-determined' || status === 'denied',
+    canOpenSettings: status === 'blocked' || status === 'restricted',
+  };
 }
 
 /**
@@ -31,11 +23,7 @@ function warnDeprecatedOnce(name: string, replacement: string): void {
  */
 export async function getCameraPermissionState(): Promise<CameraPermissionState> {
   const status = await ScannerModule.checkCameraPermission();
-  return {
-    status,
-    canRequest: status === 'not-determined' || status === 'denied',
-    canOpenSettings: status === 'blocked' || status === 'restricted',
-  };
+  return toPermissionState(status);
 }
 
 /**
@@ -62,57 +50,4 @@ export async function requestCameraPermission(): Promise<CameraPermissionStatus>
  */
 export function openCameraSettings(): void {
   ScannerModule.openCameraSettings();
-}
-
-/**
- * @deprecated Use {@link getCameraPermissionState} and read `.status`, or
- * {@link useCameraPermission}. Will be removed in a future major version.
- */
-export async function checkCameraPermission(): Promise<CameraPermissionStatus> {
-  warnDeprecatedOnce(
-    'checkCameraPermission()',
-    'Use getCameraPermissionState() (or useCameraPermission) instead.',
-  );
-  return ScannerModule.checkCameraPermission();
-}
-
-/**
- * @deprecated Use `state.status === 'granted'` or `useCameraPermission().isGranted`.
- */
-export function isCameraPermissionGranted(
-  status: CameraPermissionStatus,
-): boolean {
-  warnDeprecatedOnce(
-    'isCameraPermissionGranted()',
-    'Use status === "granted" or useCameraPermission().isGranted.',
-  );
-  return status === 'granted';
-}
-
-/**
- * @deprecated Use `getCameraPermissionState().canRequest` or
- * `useCameraPermission().canRequest`.
- */
-export function canRequestCameraPermission(
-  status: CameraPermissionStatus,
-): boolean {
-  warnDeprecatedOnce(
-    'canRequestCameraPermission()',
-    'Use getCameraPermissionState().canRequest or useCameraPermission().canRequest.',
-  );
-  return status === 'not-determined' || status === 'denied';
-}
-
-/**
- * @deprecated Use `getCameraPermissionState().canOpenSettings` or
- * `useCameraPermission().canOpenSettings`.
- */
-export function shouldOpenCameraSettings(
-  status: CameraPermissionStatus,
-): boolean {
-  warnDeprecatedOnce(
-    'shouldOpenCameraSettings()',
-    'Use getCameraPermissionState().canOpenSettings or useCameraPermission().canOpenSettings.',
-  );
-  return status === 'blocked' || status === 'restricted';
 }

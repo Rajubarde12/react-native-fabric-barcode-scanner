@@ -13,18 +13,6 @@ export {
   type CameraPermissionStatus,
 } from './cameraPermission';
 
-/** @deprecated Use {@link getCameraPermissionState} and read `.status`, or {@link useCameraPermission}. */
-export { checkCameraPermission } from './cameraPermission';
-
-/** @deprecated Use `state.status === 'granted'` or `useCameraPermission().isGranted`. */
-export { isCameraPermissionGranted } from './cameraPermission';
-
-/** @deprecated Use `getCameraPermissionState().canRequest` or `useCameraPermission().canRequest`. */
-export { canRequestCameraPermission } from './cameraPermission';
-
-/** @deprecated Use `getCameraPermissionState().canOpenSettings` or `useCameraPermission().canOpenSettings`. */
-export { shouldOpenCameraSettings } from './cameraPermission';
-
 export {
   useCameraPermission,
   type UseCameraPermissionResult,
