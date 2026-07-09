@@ -45,6 +45,26 @@ npm install react-native-fabric-barcode-scanner
 yarn add react-native-fabric-barcode-scanner
 ```
 
+### Local `file:` / Metro link
+
+If you link this repo with `file:../path` and `watchFolders`, Metro can resolve the library’s nested `node_modules/react-native` and break TurboModules (`PlatformConstants` / `ScannerModule` could not be found). Force the app’s single copy:
+
+```js
+// metro.config.js
+resolver: {
+  nodeModulesPaths: [path.resolve(__dirname, 'node_modules')],
+  extraNodeModules: {
+    'react-native-fabric-barcode-scanner': localScannerPath,
+    react: path.resolve(__dirname, 'node_modules/react'),
+    'react-native': path.resolve(__dirname, 'node_modules/react-native'),
+  },
+  blockList: [
+    /…\/react-native-custom-scanner\/node_modules\/react\/.*/,
+    /…\/react-native-custom-scanner\/node_modules\/react-native\/.*/,
+  ],
+}
+```
+
 ### iOS
 
 ```bash
