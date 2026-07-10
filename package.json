@@ -1,6 +1,6 @@
 {
   "name": "react-native-fabric-barcode-scanner",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "High-performance native barcode scanner for React Native with TurboModule + Fabric (New Architecture) support on iOS and Android",
   "main": "lib/commonjs/index.js",
   "module": "lib/module/index.js",
@@ -66,8 +66,8 @@
     "@types/react": "^18.3.12",
     "react": "18.3.1",
     "react-native": "0.76.9",
-    "react-native-builder-bob": "^0.40.13",
-    "typescript": "~5.9.3"
+    "react-native-builder-bob": "^0.43.0",
+    "typescript": "~7.0.2"
   },
   "codegenConfig": {
     "name": "RNCustomScannerSpec",
