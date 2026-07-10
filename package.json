@@ -1,6 +1,6 @@
 {
   "name": "react-native-fabric-barcode-scanner",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "High-performance native barcode scanner for React Native with TurboModule + Fabric (New Architecture) support on iOS and Android",
   "main": "lib/commonjs/index.js",
   "module": "lib/module/index.js",
