@@ -22,7 +22,7 @@ if (isNewArchitectureEnabled()) {
 // ML Kit barcode-scanning 17.3.0 — latest *bundled* model (offline, larger APK).
 // Unbundled alternative: play-services-mlkit-barcode-scanning:18.3.1
 // ---------------------------------------------------------------------------
-def cameraxVersion = "1.6.1"
+def cameraxVersion = "1.7.0"
 def mlkitBarcodeVersion = "17.3.0"
 
 android {
